@@ -4,16 +4,39 @@ include Fox
 require './dbconnector'
 
 class Main < FXMainWindow
-  def initialize(app)
-      super(app, "Conector DB PGSQL", :width => 300, :height => 700)
-      @vFrame = FXVerticalFrame.new(self, :opts => LAYOUT_FILL)
-      label = FXLabel.new( @vFrame, "Estos son los foros que tengo en la base de datos: ")
-
+  def initialize(app, alto, ancho)
+      super(app, "Conector DB PGSQL", :width => alto, :height => ancho)
       conn = Dbconnector.new
-      conn.execute_query.each do |row|
-      	row.each do |column|
-      		self.add_label_bordered column[1]
-      	end
+      @hFrame1 = FXHorizontalFrame.new(self)
+      @hFrame2 = FXHorizontalFrame.new(self)
+      @hFrame3 = FXHorizontalFrame.new(self)
+      @hFrame4 = FXHorizontalFrame.new(self,LAYOUT_FILL)
+      FXLabel.new(@hFrame1, "Select")
+      select_field = FXTextField.new(@hFrame1, 40)
+      select_field.text = "*"
+      FXLabel.new(@hFrame2, "From")
+      from_field = FXTextField.new(@hFrame2, 40)
+      from_field.text = "boards"
+      text_field = FXText.new(@hFrame4, :opts => TEXT_WORDWRAP|LAYOUT_FILL)
+      text_field.editable = false
+
+      button = FXButton.new(@hFrame3, "Buscar")
+      button.connect(SEL_COMMAND) do
+        text_field.text = ""
+
+        query = conn.execute_query( select_field.text, from_field.text )
+        keys = []
+        query.first.each_key do |k|
+          keys << k
+        end
+
+        query.each do |row|
+          keys.each do |k|
+            text = "#{k}: #{row[k]}"
+            text_field.appendText("#{text}\n")
+          end
+          text_field.appendText("\n")
+        end
       end
 
     end
@@ -22,13 +45,10 @@ class Main < FXMainWindow
     super
     show(PLACEMENT_SCREEN)
   end
-
-  def add_label_bordered(text)
-    label = FXLabel.new(@vFrame, text, :opts => FRAME_LINE)
-  end
 end
+
 app = FXApp.new
-Main.new(app)
+Main.new(app, 600, 800)
 app.create
 app.run
 
